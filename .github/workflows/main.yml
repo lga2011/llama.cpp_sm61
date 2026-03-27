@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-2022
 
     env:
-      CUDA_VERSION: "11.8"
+      CUDA_VERSION: "11.8.0"
       CUDA_PATH: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8"
 
     steps:
@@ -23,7 +23,7 @@ jobs:
           repository: ggml-org/llama.cpp
 
       - name: Install CUDA 11.8
-        uses: Jimver/cuda-toolkit@v0.2.11
+        uses: Jimver/cuda-toolkit@v0.2.29
         with:
           cuda: ${{ env.CUDA_VERSION }}
 
