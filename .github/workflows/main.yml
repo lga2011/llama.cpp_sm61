@@ -81,9 +81,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: llama-sm61-cudart11.8.zip
-          tag_name: "cuda-sm61-latest" 
+          tag_name: "latest" 
           target_commitish: ${{ github.sha }}
-          overwrite: true
           name: "llama.cpp cudart11.8 sm6.1"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
