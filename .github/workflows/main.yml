@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-2022
 
     env:
       CUDA_VERSION: "11.8.0"
@@ -27,26 +27,29 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           version: 3.27.7
-          cmake-version: 3.27.7
 
       - name: Install CUDA 11.8
         uses: Jimver/cuda-toolkit@v0.2.29
         with:
           cuda: ${{ env.CUDA_VERSION }}
           method: 'network'
-          sub-dir: true
+          sub-dir: false
+          add-to-path: true
 
-      - name: Setup MSVC
+      - name: Setup MSVC Environment
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Verify Environment
+      - name: Verify Toolchain
         shell: cmd
         run: |
+          where cmake
           cmake --version
+          where nvcc
           nvcc --version
+          where cl
           cl
 
-      - name: Configure
+      - name: Configure CMake
         shell: cmd
         run: |
           cmake -B build -G Ninja ^
@@ -54,37 +57,40 @@ jobs:
             -DGGML_NATIVE=OFF ^
             -DCMAKE_CUDA_ARCHITECTURES="61;75;86" ^
             -DCMAKE_BUILD_TYPE=Release ^
-            -DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler
+            -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler"
 
-      - name: Build
+      - name: Build Project
+        shell: cmd
         run: cmake --build build --config Release -j 8
 
-      - name: Collect binaries
+      - name: Collect Binaries
+        shell: cmd
         run: |
           mkdir out
           copy build\bin\*.exe out\
           copy build\bin\*.dll out\
 
-      - name: Collect CUDA runtime DLLs
+      - name: Collect CUDA Runtime
+        shell: cmd
         run: |
           mkdir cudart
           copy "%CUDA_PATH%\bin\cudart64_110.dll" cudart\
           copy "%CUDA_PATH%\bin\cublas64_11.dll" cudart\
           copy "%CUDA_PATH%\bin\cublasLt64_11.dll" cudart\
 
-      - name: Zip cudart
-        run: powershell Compress-Archive -Path cudart\* -DestinationPath cudart-sm61-cuda11.8.zip
+      - name: Zip Artifacts
+        shell: pwsh
+        run: |
+          Compress-Archive -Path out\* -DestinationPath llama-sm61-cuda11.8.zip
+          Compress-Archive -Path cudart\* -DestinationPath cudart-sm61-cuda11.8.zip
 
-      - name: Zip full package
-        run: powershell Compress-Archive -Path out\* -DestinationPath llama-sm61-cuda11.8.zip
-
-      - name: Upload full package
+      - name: Upload Full Package
         uses: actions/upload-artifact@v4
         with:
           name: llama-sm61
           path: llama-sm61-cuda11.8.zip
 
-      - name: Upload cudart package
+      - name: Upload CUDA Runtime
         uses: actions/upload-artifact@v4
         with:
           name: cudart-sm61
