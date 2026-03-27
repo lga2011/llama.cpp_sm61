@@ -1,7 +1,12 @@
 name: Build llama.cpp (sm_61 + CUDA 11.8)
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  watch:
+    types: [started]
 
 jobs:
   build:
