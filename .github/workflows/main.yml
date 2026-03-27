@@ -31,6 +31,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure
+        shell: cmd
         run: |
           cmake -B build ^
             -DGGML_CUDA=ON ^
