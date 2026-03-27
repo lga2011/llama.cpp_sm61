@@ -62,35 +62,18 @@ jobs:
         shell: cmd
         run: cmake --build build --config Release -j 8
 
-      - name: Collect Binaries
+      - name: Collect Binaries and CUDA Runtime
         shell: cmd
         run: |
           mkdir out
           copy build\bin\*.exe out\
           copy build\bin\*.dll out\
-
-      - name: Collect CUDA Runtime
-        shell: cmd
-        run: |
-          mkdir cudart
-          copy "%CUDA_PATH%\bin\cudart64_110.dll" cudart\
-          copy "%CUDA_PATH%\bin\cublas64_11.dll" cudart\
-          copy "%CUDA_PATH%\bin\cublasLt64_11.dll" cudart\
-
-      - name: Zip Artifacts
-        shell: pwsh
-        run: |
-          Compress-Archive -Path out\* -DestinationPath llama-sm61-cuda11.8.zip
-          Compress-Archive -Path cudart\* -DestinationPath cudart-sm61-cuda11.8.zip
+          copy "%CUDA_PATH%\bin\cudart64_110.dll" out\
+          copy "%CUDA_PATH%\bin\cublas64_11.dll" out\
+          copy "%CUDA_PATH%\bin\cublasLt64_11.dll" out\
 
       - name: Upload Full Package
         uses: actions/upload-artifact@v4
         with:
-          name: llama-sm61
-          path: llama-sm61-cuda11.8.zip
-
-      - name: Upload CUDA Runtime
-        uses: actions/upload-artifact@v4
-        with:
-          name: cudart-sm61
-          path: cudart-sm61-cuda11.8.zip
+          name: llama-sm61-cudart11.8
+          path: out\
