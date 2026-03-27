@@ -5,8 +5,8 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  watch:
-    types: [started]
+  schedule:
+    - cron: '14 8 */6 * *'
 
 jobs:
   build:
@@ -84,7 +84,6 @@ jobs:
           tag_name: "cuda-sm61-latest" 
           target_commitish: ${{ github.sha }}
           overwrite: true
-          name: "LLaMA CUDA SM_61 Build (Latest)"
-          body: "Auto-built from commit ${{ github.sha }}"
+          name: "llama.cpp cudart11.8 sm6.1"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
