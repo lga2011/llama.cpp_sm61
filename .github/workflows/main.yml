@@ -76,4 +76,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: llama-sm61-cudart11.8
-          path: out\
+          path: out/
