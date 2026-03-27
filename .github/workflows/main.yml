@@ -72,8 +72,27 @@ jobs:
           copy "%CUDA_PATH%\bin\cublas64_11.dll" out\
           copy "%CUDA_PATH%\bin\cublasLt64_11.dll" out\
 
-      - name: Upload Full Package
-        uses: actions/upload-artifact@v4
+      - name: Zip Artifacts
+        shell: pwsh
+        run: |
+          Compress-Archive -Path out\* -DestinationPath llama-sm61-cudart11.8.zip
+
+
+      # Create Git tag using the shortened source repository commit SHA
+      - name: Create Git tag
+        id: create_tag
+        run: |
+          cd out\
+          TAG_NAME="latest"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+          echo "::set-output name=TAG_NAME::$TAG_NAME"
+
+      # Upload to GitHub Releases
+      - name: Upload to GitHub Releases
+        uses: softprops/action-gh-release@v1
         with:
-          name: llama-sm61-cudart11.8
-          path: out/
+          files: llama-sm61-cudart11.8.zip
+          tag_name: ${{ steps.create_tag.outputs.TAG_NAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
