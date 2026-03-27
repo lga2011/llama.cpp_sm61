@@ -27,6 +27,7 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           version: 3.27.7
+          cmake-version: 3.27.7
 
       - name: Install CUDA 11.8
         uses: Jimver/cuda-toolkit@v0.2.29
@@ -42,11 +43,8 @@ jobs:
       - name: Verify Toolchain
         shell: cmd
         run: |
-          where cmake
           cmake --version
-          where nvcc
           nvcc --version
-          where cl
           cl
 
       - name: Configure CMake
@@ -57,7 +55,8 @@ jobs:
             -DGGML_NATIVE=OFF ^
             -DCMAKE_CUDA_ARCHITECTURES="61;75;86" ^
             -DCMAKE_BUILD_TYPE=Release ^
-            -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler"
+            -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler -Xcompiler /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH" ^
+            -DCMAKE_CXX_FLAGS="/D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
 
       - name: Build Project
         shell: cmd
