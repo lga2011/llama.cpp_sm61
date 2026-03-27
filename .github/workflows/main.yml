@@ -21,57 +21,62 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ggml-org/llama.cpp
+          submodules: 'recursive'
 
-      - name: Install latest CMake
+      - name: Install CMake 3.27.7
         uses: jwlawson/actions-setup-cmake@v2
         with:
           version: 3.27.7
+          cmake-version: 3.27.7
 
       - name: Install CUDA 11.8
         uses: Jimver/cuda-toolkit@v0.2.29
         with:
           cuda: ${{ env.CUDA_VERSION }}
+          method: 'network'
+          sub-dir: true
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Verify Environment
+        shell: cmd
+        run: |
+          cmake --version
+          nvcc --version
+          cl
+
       - name: Configure
         shell: cmd
         run: |
-          cmake -B build ^
+          cmake -B build -G Ninja ^
             -DGGML_CUDA=ON ^
             -DGGML_NATIVE=OFF ^
             -DCMAKE_CUDA_ARCHITECTURES="61;75;86" ^
-            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_CUDA_FLAGS=-allow-unsupported-compiler
 
       - name: Build
         run: cmake --build build --config Release -j 8
 
-      # 👉 收集主程序
       - name: Collect binaries
         run: |
           mkdir out
-          copy build\bin\Release\*.exe out\
-          copy build\bin\Release\*.dll out\
+          copy build\bin\*.exe out\
+          copy build\bin\*.dll out\
 
-      # 👉 收集 CUDA runtime（关键步骤）
       - name: Collect CUDA runtime DLLs
         run: |
           mkdir cudart
-
           copy "%CUDA_PATH%\bin\cudart64_110.dll" cudart\
           copy "%CUDA_PATH%\bin\cublas64_11.dll" cudart\
           copy "%CUDA_PATH%\bin\cublasLt64_11.dll" cudart\
 
-      # 👉 打包 cudart（模拟官方）
       - name: Zip cudart
-        run: |
-          powershell Compress-Archive -Path cudart\* -DestinationPath cudart-sm61-cuda11.8.zip
+        run: powershell Compress-Archive -Path cudart\* -DestinationPath cudart-sm61-cuda11.8.zip
 
-      # 👉 打包完整版本
       - name: Zip full package
-        run: |
-          powershell Compress-Archive -Path out\* -DestinationPath llama-sm61-cuda11.8.zip
+        run: powershell Compress-Archive -Path out\* -DestinationPath llama-sm61-cuda11.8.zip
 
       - name: Upload full package
         uses: actions/upload-artifact@v4
