@@ -1,0 +1,75 @@
+name: Build llama.cpp (sm_61 + CUDA 11.8)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    env:
+      CUDA_VERSION: "11.8"
+      CUDA_PATH: "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8"
+
+    steps:
+      - name: Checkout llama.cpp
+        uses: actions/checkout@v4
+        with:
+          repository: ggml-org/llama.cpp
+
+      - name: Install CUDA 11.8
+        uses: Jimver/cuda-toolkit@v0.2.11
+        with:
+          cuda: ${{ env.CUDA_VERSION }}
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        run: |
+          cmake -B build ^
+            -DGGML_CUDA=ON ^
+            -DGGML_NATIVE=OFF ^
+            -DCMAKE_CUDA_ARCHITECTURES=61 ^
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -j 8
+
+      # 👉 收集主程序
+      - name: Collect binaries
+        run: |
+          mkdir out
+          copy build\bin\Release\*.exe out\
+          copy build\bin\Release\*.dll out\
+
+      # 👉 收集 CUDA runtime（关键步骤）
+      - name: Collect CUDA runtime DLLs
+        run: |
+          mkdir cudart
+
+          copy "%CUDA_PATH%\bin\cudart64_110.dll" cudart\
+          copy "%CUDA_PATH%\bin\cublas64_11.dll" cudart\
+          copy "%CUDA_PATH%\bin\cublasLt64_11.dll" cudart\
+
+      # 👉 打包 cudart（模拟官方）
+      - name: Zip cudart
+        run: |
+          powershell Compress-Archive -Path cudart\* -DestinationPath cudart-sm61-cuda11.8.zip
+
+      # 👉 打包完整版本
+      - name: Zip full package
+        run: |
+          powershell Compress-Archive -Path out\* -DestinationPath llama-sm61-cuda11.8.zip
+
+      - name: Upload full package
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama-sm61
+          path: llama-sm61-cuda11.8.zip
+
+      - name: Upload cudart package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cudart-sm61
+          path: cudart-sm61-cuda11.8.zip
