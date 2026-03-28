@@ -22,12 +22,21 @@ jobs:
         with:
           repository: ggml-org/llama.cpp
           submodules: 'recursive'
+          fetch-depth: 1
+
+      - name: Get source SHA and current date
+        id: get_source_sha
+        shell: pwsh
+        run: |
+          $sha = git rev-parse HEAD
+          echo "SOURCE_SHA=$sha" >> $env:GITHUB_OUTPUT
+          $date = Get-Date -Format "yyyy/MM/dd"
+          echo "CURRENT_DATE=$date" >> $env:GITHUB_OUTPUT
 
       - name: Install CMake 3.27.7
         uses: jwlawson/actions-setup-cmake@v2
         with:
           version: 3.27.7
-          cmake-version: 3.27.7
 
       - name: Install CUDA 11.8
         uses: Jimver/cuda-toolkit@v0.2.29
@@ -72,7 +81,7 @@ jobs:
           copy "%CUDA_PATH%\bin\cublas64_11.dll" out\
           copy "%CUDA_PATH%\bin\cublasLt64_11.dll" out\
 
-      - name: Zip Artifacts
+      - name: Zip
         shell: pwsh
         run: |
           Compress-Archive -Path out\* -DestinationPath llama-sm61-cudart11.8.zip
@@ -81,8 +90,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: llama-sm61-cudart11.8.zip
-          tag_name: "latest" 
+          tag_name: ${{ steps.get_source_sha.outputs.CURRENT_DATE }}
           target_commitish: ${{ github.sha }}
-          name: "llama.cpp cudart11.8 sm6.1"
+          name: "llama.cpp cudart11.8 sm6.1 (${{ steps.get_source_sha.outputs.CURRENT_DATE }})"
+          body: "Source repository commit: https://github.com/ggml-org/llama.cpp/tree/${{ steps.get_source_sha.outputs.SOURCE_SHA }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
