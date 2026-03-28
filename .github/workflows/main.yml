@@ -30,7 +30,7 @@ jobs:
         run: |
           $sha = git rev-parse HEAD
           echo "SOURCE_SHA=$sha" >> $env:GITHUB_OUTPUT
-          $date = Get-Date -Format "yyyy/MM/dd"
+          $date = Get-Date -Format "yyyyMMdd"
           echo "CURRENT_DATE=$date" >> $env:GITHUB_OUTPUT
 
       - name: Install CMake 3.27.7
