@@ -33,6 +33,9 @@ jobs:
           $date = Get-Date -Format "yyyy-MM-dd"
           echo "CURRENT_DATE=$date" >> $env:GITHUB_OUTPUT
 
+      - name: Install Dependencies
+        run: choco install ninja curl
+
       - name: Install CMake 3.27.7
         uses: jwlawson/actions-setup-cmake@v2
         with:
@@ -62,6 +65,7 @@ jobs:
           cmake -B build -G Ninja ^
             -DGGML_CUDA=ON ^
             -DGGML_NATIVE=OFF ^
+            -DGGML_CURL=ON ^
             -DCMAKE_CUDA_ARCHITECTURES="61;75;86" ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler -Xcompiler /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH" ^
@@ -71,15 +75,37 @@ jobs:
         shell: cmd
         run: cmake --build build --config Release -j 8
 
-      - name: Collect Binaries and CUDA Runtime
-        shell: cmd
+      - name: Collect Binaries and Dependencies
+        shell: pwsh
         run: |
-          mkdir out
-          copy build\bin\*.exe out\
-          copy build\bin\*.dll out\
-          copy "%CUDA_PATH%\bin\cudart64_110.dll" out\
-          copy "%CUDA_PATH%\bin\cublas64_11.dll" out\
-          copy "%CUDA_PATH%\bin\cublasLt64_11.dll" out\
+          New-Item -ItemType Directory -Force -Path out
+          Copy-Item "build\bin\*.exe" "out\" -ErrorAction SilentlyContinue
+          Copy-Item "build\bin\*.dll" "out\" -ErrorAction SilentlyContinue
+          
+          Copy-Item "$env:CUDA_PATH\bin\cudart64_110.dll" "out\"
+          Copy-Item "$env:CUDA_PATH\bin\cublas64_11.dll" "out\"
+          Copy-Item "$env:CUDA_PATH\bin\cublasLt64_11.dll" "out\"
+
+          $ssldir = "C:\Program Files\OpenSSL-Win64\bin"
+          if (Test-Path "$ssldir\libcrypto-3-x64.dll") {
+              Copy-Item "$ssldir\libcrypto-3-x64.dll" "out\"
+              Copy-Item "$ssldir\libssl-3-x64.dll" "out\"
+          } else {
+              $cryptoDll = Get-Command libcrypto-3-x64.dll -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+              if ($cryptoDll) {
+                  $binDir = Split-Path $cryptoDll
+                  Copy-Item "$binDir\libcrypto-3-x64.dll" "out\"
+                  Copy-Item "$binDir\libssl-3-x64.dll" "out\"
+              }
+          }
+
+          $vcruntimedir = "C:\Windows\System32"
+          $vc_dlls = @("vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll")
+          foreach ($dll in $vc_dlls) {
+              if (Test-Path "$vcruntimedir\$dll") {
+                  Copy-Item "$vcruntimedir\$dll" "out\" -ErrorAction SilentlyContinue
+              }
+          }
 
       - name: Zip
         shell: pwsh
