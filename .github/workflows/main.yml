@@ -61,12 +61,13 @@ jobs:
 
       - name: Configure CMake
         shell: cmd
+        #-DCMAKE_CUDA_ARCHITECTURES="61;75;86" ^
         run: |
           cmake -B build -G Ninja ^
             -DGGML_CUDA=ON ^
             -DGGML_NATIVE=OFF ^
             -DGGML_CURL=ON ^
-            -DCMAKE_CUDA_ARCHITECTURES="61;75;86" ^
+            -DCMAKE_CUDA_ARCHITECTURES=61 ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_CUDA_FLAGS="-allow-unsupported-compiler -Xcompiler /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH" ^
             -DCMAKE_CXX_FLAGS="/D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH"
