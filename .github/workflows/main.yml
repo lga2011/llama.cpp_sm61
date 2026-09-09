@@ -10,6 +10,11 @@ on:
   watch:
     types: [ started ]
 
+permissions:
+  contents: write
+  id-token: none
+  attestations: none
+
 jobs:
   build:
     runs-on: windows-2022
